@@ -1,0 +1,480 @@
+@import "tailwindcss";
+
+/* Google Fonts — Plus Jakarta Sans (SaaS-optimized, friendly + modern) */
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap");
+
+@theme {
+  /* ──── Trust & Professionalism Palette ──── */
+  --color-primary: #0F172A;
+  --color-primary-light: #1E293B;
+  --color-primary-dark: #020617;
+  --color-primary-50: #E0E7F1;
+  --color-primary-100: #C7D2E0;
+  --color-primary-200: #94A3B8;
+
+  --color-cta: #0369A1;
+  --color-cta-light: #0EA5E9;
+  --color-cta-dark: #075985;
+  --color-cta-50: #E0F2FE;
+
+  --color-accent: #3B82F6;
+  --color-accent-light: #60A5FA;
+  --color-accent-50: #EFF6FF;
+
+  --color-success: #059669;
+  --color-success-light: #D1FAE5;
+  --color-warning: #D97706;
+  --color-warning-light: #FEF3C7;
+  --color-error: #DC2626;
+  --color-error-light: #FEF2F2;
+  --color-info: #0369A1;
+  --color-info-light: #E0F2FE;
+
+  --color-surface: #FFFFFF;
+  --color-background: #F8FAFC;
+  --color-background-alt: #F1F5F9;
+
+  --color-border: #E2E8F0;
+  --color-border-light: #F1F5F9;
+
+  --color-text-primary: #1E293B;
+  --color-text-secondary: #64748B;
+  --color-text-tertiary: #94A3B8;
+  --color-text-inverse: #FFFFFF;
+
+  /* ──── Typography ──── */
+  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  /* ──── Border Radius (Neumorphism 2.0) ──── */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 20px;
+  --radius-full: 9999px;
+
+  /* ──── Soft Shadows (Neumorphism 2.0) ──── */
+  --shadow-xs: 0 1px 2px 0 rgb(15 23 42 / 0.04);
+  --shadow-sm: 0 2px 8px -2px rgb(15 23 42 / 0.06), 0 1px 3px -1px rgb(15 23 42 / 0.04);
+  --shadow-md: 0 4px 16px -4px rgb(15 23 42 / 0.08), 0 2px 6px -2px rgb(15 23 42 / 0.04);
+  --shadow-lg: 0 8px 30px -6px rgb(15 23 42 / 0.1), 0 4px 10px -4px rgb(15 23 42 / 0.05);
+  --shadow-xl: 0 16px 50px -10px rgb(15 23 42 / 0.12), 0 8px 16px -6px rgb(15 23 42 / 0.06);
+
+  /* Neumorphic soft shadows */
+  --shadow-neu: 6px 6px 16px rgb(15 23 42 / 0.06), -6px -6px 16px rgb(255 255 255 / 0.8);
+  --shadow-neu-hover: 8px 8px 20px rgb(15 23 42 / 0.08), -8px -8px 20px rgb(255 255 255 / 0.9);
+  --shadow-neu-inset: inset 2px 2px 6px rgb(15 23 42 / 0.06), inset -2px -2px 6px rgb(255 255 255 / 0.7);
+  --shadow-neu-pressed: inset 3px 3px 8px rgb(15 23 42 / 0.08), inset -3px -3px 8px rgb(255 255 255 / 0.6);
+  --shadow-glow: 0 0 20px rgb(3 105 161 / 0.15), 0 0 6px rgb(3 105 161 / 0.1);
+
+  /* ──── Animations ──── */
+  --animate-spin: spin 1s linear infinite;
+  --animate-pulse: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-fade-in: fadeIn 0.2s ease-out;
+  --animate-slide-in: slideIn 0.2s ease-out;
+  --animate-scale-in: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --animate-shimmer: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ───── Dark Mode Overrides ───── */
+html.dark {
+  --color-surface: #161B27;
+  --color-background: #0E1219;
+  --color-background-alt: #1C2333;
+
+  /* Borders visible at 5:1+ contrast in dark mode */
+  --color-border: #2D3748;
+  --color-border-light: #1E2535;
+
+  /* Text: 4.5:1 minimum contrast on dark surfaces */
+  --color-text-primary: #F1F5F9;
+  --color-text-secondary: #94A3B8;
+  --color-text-tertiary: #64748B;
+  --color-text-inverse: #0E1219;
+
+  --color-cta-50: #0C2D48;
+  --color-accent-50: #172554;
+  --color-primary-50: #1C2333;
+  --color-primary-100: #2D3748;
+  --color-primary-200: #475569;
+
+  --color-success-light: #064E3B;
+  --color-warning-light: #78350F;
+  --color-error-light: #7F1D1D;
+  --color-info-light: #0C2D48;
+
+  --color-accent: #60A5FA;
+
+  --shadow-neu: 6px 6px 16px rgb(0 0 0 / 0.5), -6px -6px 16px rgb(45 55 72 / 0.12);
+  --shadow-neu-hover: 8px 8px 20px rgb(0 0 0 / 0.6), -8px -8px 20px rgb(45 55 72 / 0.15);
+  --shadow-neu-inset: inset 2px 2px 6px rgb(0 0 0 / 0.4), inset -2px -2px 6px rgb(45 55 72 / 0.08);
+  --shadow-neu-pressed: inset 3px 3px 8px rgb(0 0 0 / 0.5), inset -3px -3px 8px rgb(45 55 72 / 0.08);
+  --shadow-glow: 0 0 20px rgb(96 165 250 / 0.2), 0 0 6px rgb(96 165 250 / 0.15);
+}
+
+/* ───── Keyframe Animations ───── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+  50% { opacity: .5; }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 8px rgb(3 105 161 / 0.15); }
+  50% { box-shadow: 0 0 20px rgb(3 105 161 / 0.3); }
+}
+
+/* GPU-optimized: only animates filter (composited property) */
+@keyframes meshRotate {
+  0%   { filter: hue-rotate(0deg); }
+  50%  { filter: hue-rotate(30deg); }
+  100% { filter: hue-rotate(0deg); }
+}
+
+@keyframes meshFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%      { transform: translate(2%, -1%) scale(1.02); }
+  66%      { transform: translate(-1%, 1%) scale(0.98); }
+}
+
+/* ───── Mesh Gradient ───── */
+.mesh-gradient {
+  position: relative;
+  overflow: hidden;
+}
+.mesh-gradient::before {
+  content: '';
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(ellipse at 20% 30%, #0F172A 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, #0369A1 0%, transparent 50%),
+    radial-gradient(ellipse at 40% 80%, #1E293B 0%, transparent 50%),
+    radial-gradient(ellipse at 70% 70%, #3B82F6 0%, transparent 40%),
+    radial-gradient(ellipse at 50% 50%, #075985 0%, transparent 60%);
+  animation: meshRotate 60s ease-in-out infinite, meshFloat 45s ease-in-out infinite;
+  will-change: filter, transform;
+  z-index: 0;
+}
+
+/* ───── Glassmorphism ───── */
+.glass {
+  backdrop-filter: blur(10px) saturate(180%);
+  -webkit-backdrop-filter: blur(10px) saturate(180%);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.glass-card {
+  backdrop-filter: blur(12px) saturate(180%);
+  -webkit-backdrop-filter: blur(12px) saturate(180%);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+html.dark .glass {
+  background: rgba(22, 27, 39, 0.7);
+  border-color: rgba(148, 163, 184, 0.18);
+}
+html.dark .glass-card {
+  background: rgba(22, 27, 39, 0.6);
+  border-color: rgba(148, 163, 184, 0.15);
+}
+html.dark .glass-card:hover {
+  background: rgba(22, 27, 39, 0.75);
+}
+
+/* ───── Base ───── */
+* { box-sizing: border-box; }
+
+html {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  color-scheme: light;
+}
+html.dark { color-scheme: dark; }
+
+body {
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  line-height: 1.6;
+}
+
+/* Headings use Poppins */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+}
+
+/* ───── Scrollbar ───── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-text-tertiary); }
+
+/* ───── Toaster overrides ───── */
+[data-sonner-toaster] { font-family: var(--font-sans) !important; }
+
+/* ───── Smooth Dark Mode Transitions ───── */
+html, body, * {
+  transition: background-color 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s ease, color 0.15s ease;
+}
+
+/* ───── Input Dark Mode ───── */
+html.dark input, html.dark select, html.dark textarea {
+  background-color: var(--color-background);
+  color: var(--color-text-primary);
+  border-color: var(--color-border);
+}
+html.dark input::placeholder, html.dark textarea::placeholder {
+  color: var(--color-text-tertiary);
+}
+
+/* ───── Neumorphic Utility Classes ───── */
+
+/* Neumorphic Card */
+.neu-card {
+  background: var(--color-surface);
+  border-radius: 16px;
+  box-shadow: var(--shadow-neu);
+  border: 1px solid rgb(226 232 240 / 0.5);
+  transition: box-shadow 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.neu-card:hover {
+  box-shadow: var(--shadow-neu-hover);
+}
+html.dark .neu-card {
+  border-color: rgb(45 55 72 / 0.6);
+  box-shadow: var(--shadow-neu);
+}
+
+/* Neumorphic Input */
+.neu-input {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-neu-inset);
+  transition: box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.2s ease;
+  outline: none;
+}
+.neu-input:focus {
+  border-color: var(--color-cta);
+  box-shadow: var(--shadow-neu-inset), 0 0 0 3px rgb(3 105 161 / 0.15);
+}
+
+/* Neumorphic Button */
+.neu-btn {
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.neu-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-md);
+}
+.neu-btn:active {
+  transform: translateY(0) scale(0.99);
+  box-shadow: var(--shadow-neu-pressed);
+}
+
+/* Neumorphic Button Primary */
+.neu-btn-primary {
+  background: var(--color-cta);
+  color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 14px -3px rgb(3 105 161 / 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: pointer;
+}
+.neu-btn-primary:hover {
+  background: var(--color-cta-dark);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 6px 20px -3px rgb(3 105 161 / 0.5), var(--shadow-glow);
+}
+.neu-btn-primary:active {
+  transform: translateY(0) scale(0.99);
+  box-shadow: 0 2px 8px -2px rgb(3 105 161 / 0.3);
+}
+
+/* Shimmer Skeleton */
+.shimmer-skeleton {
+  background: linear-gradient(90deg, var(--color-background-alt) 25%, var(--color-border-light) 50%, var(--color-background-alt) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+  border-radius: 12px;
+}
+
+/* Modal Scale-In Animation */
+.modal-scale-in {
+  animation: scaleIn 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* Focus Ring Utility */
+.focus-ring:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgb(3 105 161 / 0.2);
+  border-color: var(--color-cta);
+}
+
+/* ───── Accessibility: Reduced Motion ───── */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ───── Print Styles ───── */
+@media print {
+  /* Hide non-essential UI */
+  aside, header, nav, .no-print,
+  button:not(.print-include),
+  [data-sonner-toaster] {
+    display: none !important;
+  }
+
+  /* Reset layout */
+  body {
+    background: white !important;
+    color: black !important;
+    font-size: 12px;
+  }
+
+  main {
+    padding: 0 !important;
+    overflow: visible !important;
+  }
+
+  .flex.h-screen {
+    display: block !important;
+  }
+
+  /* Tables */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  th, td {
+    border: 1px solid #ddd !important;
+    padding: 6px 8px !important;
+    color: black !important;
+    background: white !important;
+  }
+  th {
+    background: #f3f4f6 !important;
+    font-weight: 600 !important;
+  }
+  tr { page-break-inside: avoid; }
+
+  /* Cards */
+  .bg-surface, .bg-background-alt, .neu-card {
+    background: white !important;
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+  }
+
+  /* page */
+  @page {
+    margin: 1cm;
+    size: landscape;
+  }
+}
+
+/* ───── Mobile Responsive ───── */
+@media (max-width: 640px) {
+  /* Stat grids: stack on mobile */
+  .grid-cols-2, .grid-cols-3 {
+    grid-template-columns: 1fr !important;
+  }
+  .lg\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+
+  /* Compact table cells */
+  table th, table td {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+
+  /* Page headings */
+  h1 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Modal widths */
+  .max-w-md, .max-w-sm, .max-w-lg {
+    max-width: calc(100vw - 2rem) !important;
+  }
+
+  /* Touch-friendly inputs – min 44px tap targets */
+  input, select, textarea {
+    min-height: 44px;
+    font-size: 16px !important; /* prevents iOS zoom */
+  }
+
+  /* Pagination compact */
+  .pagination-pages {
+    display: none;
+  }
+
+  /* Filter rows: stack */
+  .flex-col.sm\:flex-row {
+    flex-direction: column !important;
+  }
+
+  /* Buttons text */
+  .flex.items-center.gap-2 > a,
+  .flex.items-center.gap-2 > button {
+    font-size: 13px;
+  }
+}
+
+/* ───── Tablet Responsive ───── */
+@media (max-width: 1024px) and (min-width: 641px) {
+  .lg\:grid-cols-4 {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* ───── Touch Interaction ───── */
+@media (hover: none) {
+  /* Larger tap targets – min 44px */
+  button, a {
+    min-height: 44px;
+  }
+
+  /* Remove hover effects that don't work on touch */
+  .hover\:bg-background-alt\/50:hover {
+    background: transparent;
+  }
+}

@@ -1,0 +1,104 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 210 185">
+  <defs>
+    <!-- Left face: deep blue gradient (light top-right, dark bottom-left) -->
+    <linearGradient id="leftFace" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1e3a8a"/>
+    </linearGradient>
+    <!-- Top-left portion: blue -->
+    <linearGradient id="topLeft" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#3b82f6"/>
+    </linearGradient>
+    <!-- Top-right portion: cyan/sky -->
+    <linearGradient id="topRight" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0ea5e9"/>
+      <stop offset="100%" stop-color="#22d3ee"/>
+    </linearGradient>
+    <!-- Right face: orange gradient -->
+    <linearGradient id="rightFace" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#ea580c"/>
+    </linearGradient>
+    <!-- Arrow: orange gradient -->
+    <linearGradient id="arrowGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#fb923c"/>
+      <stop offset="100%" stop-color="#f97316"/>
+    </linearGradient>
+  </defs>
+
+  <!--
+    Cube key vertices:
+      A  = top        (88, 10)
+      B  = left       (16, 52)
+      C  = right      (160, 52)
+      D  = center     (88, 94)
+      E  = bot-left   (16, 136)
+      Fp = bot-right  (160, 136)
+      G  = bottom     (88, 178)
+  -->
+
+  <!-- ── Faces ── -->
+
+  <!-- Left face (blue gradient) -->
+  <polygon points="16,52 16,136 88,178 88,94" fill="url(#leftFace)"/>
+
+  <!-- Top face – left half (blue) -->
+  <polygon points="88,10 16,52 88,94" fill="url(#topLeft)"/>
+
+  <!-- Top face – right half (cyan) -->
+  <polygon points="88,10 160,52 88,94" fill="url(#topRight)"/>
+
+  <!-- Right face (orange) -->
+  <polygon points="160,52 160,136 88,178 88,94" fill="url(#rightFace)"/>
+
+  <!-- ── White seam lines ── -->
+  <g stroke="white" stroke-width="5" stroke-linecap="round" fill="none">
+    <line x1="88" y1="10"  x2="16"  y2="52"/>
+    <line x1="88" y1="10"  x2="160" y2="52"/>
+    <line x1="88" y1="10"  x2="88"  y2="94"/>
+    <line x1="16" y1="52"  x2="88"  y2="94"/>
+    <line x1="160" y1="52" x2="88"  y2="94"/>
+    <line x1="88" y1="94"  x2="88"  y2="178"/>
+    <line x1="16" y1="52"  x2="16"  y2="136"/>
+    <line x1="160" y1="52" x2="160" y2="136"/>
+    <line x1="16" y1="136" x2="88"  y2="178"/>
+    <line x1="160" y1="136" x2="88" y2="178"/>
+  </g>
+
+  <!--
+    White "F" on the right face.
+    Right face parameterization:
+      P(u,v) = (88 + 72u, 94 - 42u + 84v)
+      where D=(88,94) is origin, u goes toward C, v goes toward G.
+
+    F shape in UV space (u,v ∈ [0,1]):
+      Stem:       u∈[0.10,0.34], v∈[0.05,0.93]
+      Top bar:    u∈[0.34,0.90], v∈[0.05,0.33]
+      Middle bar: u∈[0.34,0.72], v∈[0.47,0.63]
+
+    Computed SVG coords:
+      P(u,v) for each corner of the F outline (clockwise):
+  -->
+  <polygon
+    fill="white"
+    points="
+      97.2,97.7
+      152.8,62.6
+      152.8,85.3
+      112.5,110.4
+      112.5,120.6
+      139.8,104.3
+      139.8,118.1
+      112.5,136.9
+      112.5,168.1
+      97.2,175.5
+    "
+  />
+
+  <!-- ── Orange arrow (pointing right) ── -->
+  <polygon
+    points="158,44 178,44 178,36 200,55 178,74 178,66 158,66"
+    fill="url(#arrowGrad)"
+  />
+</svg>
