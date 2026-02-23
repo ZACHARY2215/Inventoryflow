@@ -72,6 +72,11 @@ export default function Login() {
     if (!reg.first_name || !reg.last_name || !reg.username || !reg.email || !reg.phone) {
       setRegError('All fields are required'); return
     }
+    const usernameRegex = /^[A-Za-z_][A-Za-z0-9_]*$/;
+    if (!usernameRegex.test(reg.username)) {
+      setRegError('Username must start with a letter or underscore, and contain only letters, numbers, and underscores.');
+      return;
+    }
     if (reg.password.length < 8) { setRegError('Password must be at least 8 characters'); return }
     if (reg.password !== reg.confirm) { setRegError('Passwords do not match'); return }
     setRegistering(true)
@@ -327,7 +332,7 @@ export default function Login() {
                     <input className={cn(inputCls, 'pl-9 pr-4')} placeholder="juandc"
                       value={reg.username} onChange={e => setReg({ ...reg, username: e.target.value })} required />
                   </div>
-                  <p className="text-xs text-text-tertiary mt-1">This will be shown as your name across the app</p>
+                  <p className="text-xs text-text-tertiary mt-1">Letters, numbers, and underscores only. Must start with a letter.</p>
                 </div>
 
                 <div>
