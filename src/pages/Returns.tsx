@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase, invokeEdgeFunction } from '@/lib/supabase'
+import { invokeEdgeFunction } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { apiFetch } from '@/lib/api'
 import { cn, formatDateTime } from '@/lib/utils'
@@ -55,7 +55,7 @@ export default function Returns() {
     finally { setActionLoading(false) }
   }
 
-  const filtered = returns.filter(r => {
+  const filtered = returns.filter((r: any) => {
     const matchSearch = r.return_number.toLowerCase().includes(search.toLowerCase()) || r.reason.toLowerCase().includes(search.toLowerCase())
     return matchSearch && (filter === 'all' || r.status === filter)
   })
@@ -93,7 +93,7 @@ export default function Returns() {
               <th className="text-left py-3 px-4 font-medium text-text-secondary">Date</th>
               {isAdmin && <th className="text-right py-3 px-4 font-medium text-text-secondary">Actions</th>}
             </tr></thead>
-            <tbody>{filtered.map(r => {
+            <tbody>{filtered.map((r: any) => {
               const sc = statusConfig[r.status] || statusConfig.pending
               const Icon = sc.icon
               return (
