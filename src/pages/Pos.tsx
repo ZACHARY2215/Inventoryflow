@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, invokeEdgeFunction } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { cn, formatCurrency, piecesToCasesAndPieces, generateOrderNumber } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -227,7 +227,7 @@ export default function Pos() {
     setInvoiceLoading(true)
     setInvoiceUrl('')
     try {
-      const { data, error } = await supabase.functions.invoke('inv_generate_invoice', {
+      const { data, error } = await invokeEdgeFunction('inv_generate_invoice', {
         body: { order_id: completedOrderId },
       })
       if (error || !data?.success) throw new Error(data?.error || error?.message || 'Failed')

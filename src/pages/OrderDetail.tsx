@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { supabase, invokeEdgeFunction } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { cn, formatCurrency, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -56,7 +56,7 @@ export default function OrderDetail() {
         if (error) throw error
       } else {
         const fnMap = { confirm: 'inv_confirm_order', cancel: 'inv_cancel_order' }
-        const { data, error } = await supabase.functions.invoke(fnMap[type], {
+        const { data, error } = await invokeEdgeFunction(fnMap[type], {
           body: { order_id: id },
         })
         if (error || !data?.success) throw new Error(data?.error || error?.message || 'Failed')
@@ -78,7 +78,7 @@ export default function OrderDetail() {
     // Save company name for future use
     if (companyName.trim()) localStorage.setItem('blast-company-name', companyName.trim())
     try {
-      const { data, error } = await supabase.functions.invoke('inv_generate_invoice', {
+      const { data, error } = await invokeEdgeFunction('inv_generate_invoice', {
         body: { order_id: id, company_name: companyName.trim() || undefined },
       })
       if (error || !data?.success) throw new Error(data?.error || error?.message || 'Failed')

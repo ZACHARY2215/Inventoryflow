@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { supabase, invokeEdgeFunction } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { cn, piecesToCasesAndPieces, exportToCsv } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -79,7 +79,7 @@ export default function Inventory() {
 
     setRestockLoading(true)
     try {
-      const { data, error } = await supabase.functions.invoke('inv_admin_restock', {
+      const { data, error } = await invokeEdgeFunction('inv_admin_restock', {
         body: { product_id: restockProduct.id, additional_pieces: pieces },
       })
       if (error || (data && !data.success)) throw new Error(data?.error || error?.message || 'Failed')

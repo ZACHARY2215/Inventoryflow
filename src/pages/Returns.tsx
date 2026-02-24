@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, invokeEdgeFunction } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { cn, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -30,7 +30,7 @@ export default function Returns() {
     if (!actionDialog) return
     setActionLoading(true)
     try {
-      const { data, error } = await supabase.functions.invoke('inv_process_return', {
+      const { data, error } = await invokeEdgeFunction('inv_process_return', {
         body: { return_id: actionDialog.id, action: actionDialog.action },
       })
       if (error || !data?.success) throw new Error(data?.error || error?.message || 'Failed')

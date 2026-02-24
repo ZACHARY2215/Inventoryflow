@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, invokeEdgeFunction } from '@/lib/supabase'
 import { cn, formatDateTime, exportToCsv } from '@/lib/utils'
 import { toast } from 'sonner'
 import Pagination from '@/components/Pagination'
@@ -82,7 +82,7 @@ export default function UserManagement() {
     if (resetPw.length < 8) { toast.error('Password must be at least 8 characters'); return }
     setResettingPw(true)
     try {
-      const { error } = await supabase.functions.invoke('inv_admin_reset_password', {
+      const { error } = await invokeEdgeFunction('inv_admin_reset_password', {
         body: { user_id: resetDialog.id, new_password: resetPw },
       })
       if (error) throw error
@@ -98,7 +98,7 @@ export default function UserManagement() {
   const handleApprove = async (req: RegistrationRequest) => {
     setActionLoading(req.id)
     try {
-      const { error } = await supabase.functions.invoke('inv_approve_registration', {
+      const { error } = await invokeEdgeFunction('inv_approve_registration', {
         body: { action: 'approve', request_id: req.id },
       })
       if (error) throw error
@@ -115,7 +115,7 @@ export default function UserManagement() {
     if (!rejectTarget) return
     setActionLoading(rejectTarget.id)
     try {
-      const { error } = await supabase.functions.invoke('inv_approve_registration', {
+      const { error } = await invokeEdgeFunction('inv_approve_registration', {
         body: { action: 'reject', request_id: rejectTarget.id, reject_reason: rejectReason.trim() || null },
       })
       if (error) throw error
