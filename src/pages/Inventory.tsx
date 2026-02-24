@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase, invokeEdgeFunction } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
+import { apiFetch } from '@/lib/api'
 import { cn, piecesToCasesAndPieces, exportToCsv } from '@/lib/utils'
 import { toast } from 'sonner'
 import Pagination from '@/components/Pagination'
@@ -53,11 +54,21 @@ export default function Inventory() {
   useEffect(() => { if (restockProduct && inputRef.current) inputRef.current.focus() }, [restockProduct])
 
   const fetchProducts = async () => {
-    setLoading(true)
-    const { data, error } = await supabase.from('blast_products').select('*').order('name')
-    if (error) toast.error(error.message)
-    else setProducts(data || [])
-    setLoading(false)
+    try {
+      setLoading(true)
+      const data = await apiFetch<Product[]>('/api/query', {
+        method: 'POST',
+        body: JSON.stringify({
+          table: 'blast_products',
+          order: { column: 'name', ascending: true }
+        })
+      })
+      setProducts(data || [])
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to fetch products')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const openRestock = (p: Product) => {

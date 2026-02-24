@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { cn, formatCurrency, formatDateTime, exportToCsv } from '@/lib/utils'
+import { apiFetch } from '@/lib/api'
 import { toast } from 'sonner'
 import Pagination from '@/components/Pagination'
 import PrintButton from '@/components/PrintButton'
@@ -48,25 +49,26 @@ export default function Orders() {
   // User name lookup
   const [userMap, setUserMap] = useState<Record<string, string>>({})
   const fetchUsers = async () => {
-    const { data } = await supabase.from('blast_users').select('id, display_name, email')
-    if (data) {
-      const map: Record<string, string> = {}
-      data.forEach((u: any) => { map[u.id] = u.display_name || u.email })
-      setUserMap(map)
-    }
+    try {
+      const data = await apiFetch<any[]>('/api/query', {
+        method: 'POST',
+        body: JSON.stringify({ table: 'blast_users', select: 'id, display_name, email' })
+      })
+      if (data) {
+        const map: Record<string, string> = {}
+        data.forEach((u: any) => { map[u.id] = u.display_name || u.email })
+        setUserMap(map)
+      }
+    } catch (error) {}
   }
 
   const fetchOrders = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('blast_orders')
-        .select('*')
-        .order('created_at', { ascending: false })
-      if (error) toast.error(error.message)
-      else setOrders(data || [])
-    } catch {
-      toast.error('Failed to load orders')
+      const data = await apiFetch<Order[]>('/api/orders', { timeoutMs: 15000 })
+      setOrders(data || [])
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load orders')
     } finally {
       setLoading(false)
     }

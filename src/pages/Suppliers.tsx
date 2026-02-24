@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api'
 import { toast } from 'sonner'
 import { Factory, Plus, Search, Edit2, Trash2, X, Save, Phone, Mail, MapPin, User } from 'lucide-react'
 import usePageTitle from '@/hooks/usePageTitle'
@@ -22,10 +23,17 @@ export default function Suppliers() {
 
   const load = async () => {
     setLoading(true)
-    const { data, error } = await supabase.from('blast_suppliers').select('*').order('name')
-    if (error) { toast.error(error.message); setLoading(false); return }
-    setSuppliers(data || [])
-    setLoading(false)
+    try {
+      const data = await apiFetch<Supplier[]>('/api/query', {
+        method: 'POST',
+        body: JSON.stringify({ table: 'blast_suppliers', order: { column: 'name', ascending: true } })
+      })
+      setSuppliers(data || [])
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load suppliers')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filtered = suppliers.filter(s => s.name.toLowerCase().includes(search.toLowerCase()) || (s.contact_person || '').toLowerCase().includes(search.toLowerCase()))

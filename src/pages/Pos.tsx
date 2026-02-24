@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase, invokeEdgeFunction } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { cn, formatCurrency, piecesToCasesAndPieces, generateOrderNumber } from '@/lib/utils'
 import { toast } from 'sonner'
@@ -60,16 +61,29 @@ export default function Pos() {
   useEffect(() => { fetchProducts(); fetchCustomers() }, [])
 
   const fetchProducts = async () => {
-    const { data, error } = await supabase.from('blast_products').select('*').order('name')
-    if (error) toast.error(error.message)
-    else setProducts(data || [])
-    setLoading(false)
+    try {
+      const data = await apiFetch<Product[]>('/api/query', {
+        method: 'POST',
+        body: JSON.stringify({ table: 'blast_products', order: { column: 'name', ascending: true } })
+      })
+      setProducts(data || [])
+    } catch (error: any) {
+      toast.error(error.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const fetchCustomers = async () => {
-    const { data, error } = await supabase.from('blast_customers').select('id, name, phone, outstanding_balance').eq('is_active', true).order('name')
-    if (error) return
-    setCustomers(data || [])
+    try {
+      const data = await apiFetch<Customer[]>('/api/query', {
+        method: 'POST',
+        body: JSON.stringify({ table: 'blast_customers', select: 'id, name, phone, outstanding_balance', eq: { is_active: true }, order: { column: 'name', ascending: true } })
+      })
+      setCustomers(data || [])
+    } catch (error: any) {
+      // silently handle
+    }
   }
 
   const filteredCustomers = customers.filter(c =>

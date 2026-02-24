@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase, invokeEdgeFunction } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
+import { apiFetch } from '@/lib/api'
 import { cn, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import { RotateCcw, Search, CheckCircle, XCircle, Clock } from 'lucide-react'
@@ -19,11 +20,21 @@ export default function Returns() {
   useEffect(() => { load() }, [])
 
   const load = async () => {
-    setLoading(true)
-    const { data, error } = await supabase.from('blast_returns').select('*').order('created_at', { ascending: false })
-    if (error) toast.error(error.message)
-    else setReturns(data || [])
-    setLoading(false)
+    try {
+      setLoading(true)
+      const data = await apiFetch<any[]>('/api/query', {
+        method: 'POST',
+        body: JSON.stringify({
+          table: 'blast_returns',
+          order: { column: 'created_at', ascending: false }
+        })
+      })
+      setReturns(data || [])
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to fetch returns')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleAction = async () => {

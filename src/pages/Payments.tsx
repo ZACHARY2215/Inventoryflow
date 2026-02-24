@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api'
 import { formatCurrency, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import { CreditCard, Search, DollarSign, Clock, CheckCircle } from 'lucide-react'
@@ -14,11 +14,22 @@ export default function Payments() {
   useEffect(() => { load() }, [])
 
   const load = async () => {
-    setLoading(true)
-    const { data, error } = await supabase.from('blast_orders').select('*').in('status', ['confirmed', 'delivered']).order('created_at', { ascending: false })
-    if (error) toast.error(error.message)
-    else setOrders(data || [])
-    setLoading(false)
+    try {
+      setLoading(true)
+      const data = await apiFetch<any[]>('/api/query', {
+        method: 'POST',
+        body: JSON.stringify({
+          table: 'blast_orders',
+          in: { status: ['confirmed', 'delivered'] },
+          order: { column: 'created_at', ascending: false }
+        })
+      })
+      setOrders(data || [])
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to fetch payments')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const totalRevenue = orders.reduce((s, o) => s + Number(o.total_amount || 0), 0)

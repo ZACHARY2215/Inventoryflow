@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api'
 import { formatCurrency } from '@/lib/utils'
 import {
   TrendingUp, Package, DollarSign, ShoppingCart, AlertTriangle,
@@ -32,17 +32,22 @@ export default function Analytics() {
   useEffect(() => { load() }, [])
 
   const load = async () => {
-    const [ordersRes, productsRes, itemsRes, returnsRes] = await Promise.all([
-      supabase.from('blast_orders').select('*'),
-      supabase.from('blast_products').select('*'),
-      supabase.from('blast_order_items').select('*, blast_products(name, category)'),
-      supabase.from('blast_returns').select('*'),
-    ])
-    setOrders(ordersRes.data || [])
-    setProducts(productsRes.data || [])
-    setItems(itemsRes.data || [])
-    setReturns(returnsRes.data || [])
-    setLoading(false)
+    try {
+      const [ordersData, productsData, itemsData, returnsData] = await Promise.all([
+        apiFetch<any[]>('/api/query', { method: 'POST', body: JSON.stringify({ table: 'blast_orders' }) }),
+        apiFetch<any[]>('/api/query', { method: 'POST', body: JSON.stringify({ table: 'blast_products' }) }),
+        apiFetch<any[]>('/api/query', { method: 'POST', body: JSON.stringify({ table: 'blast_order_items', select: '*, blast_products(name, category)' }) }),
+        apiFetch<any[]>('/api/query', { method: 'POST', body: JSON.stringify({ table: 'blast_returns' }) }),
+      ])
+      setOrders(ordersData || [])
+      setProducts(productsData || [])
+      setItems(itemsData || [])
+      setReturns(returnsData || [])
+    } catch (error: any) {
+      console.error(error.message)
+    } finally {
+      setLoading(false)
+    }
   }
 
   // Filter orders by date range

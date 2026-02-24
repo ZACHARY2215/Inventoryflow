@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api'
 import { useAuth } from '@/context/AuthContext'
 import { formatCurrency } from '@/lib/utils'
 import {
@@ -44,15 +44,16 @@ export default function Dashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const [productsRes, ordersRes, orderItemsRes] = await Promise.all([
-        supabase.from('blast_products').select('id, name, inventory_pieces, pieces_per_case'),
-        supabase.from('blast_orders').select('*').order('created_at', { ascending: false }),
-        supabase.from('blast_order_items').select('product_id, cases_ordered, unit_price_piece_snapshot, pieces_per_case_snapshot, blast_products(name)'),
-      ])
+      setLoading(true)
+      const data = await apiFetch<{
+        products: any[],
+        orders: any[],
+        items: any[]
+      }>('/api/dashboard', { timeoutMs: 15000 })
 
-      const products = productsRes.data || []
-      const orders = ordersRes.data || []
-      const items = orderItemsRes.data || []
+      const products = data.products || []
+      const orders = data.orders || []
+      const items = data.items || []
 
       const lowStock = products.filter(p => p.inventory_pieces < (p.pieces_per_case * 5))
       const confirmed = orders.filter(o => o.status === 'confirmed' || o.status === 'delivered')
@@ -91,7 +92,7 @@ export default function Dashboard() {
         .slice(0, 5)
         .map(p => ({ name: p.name, value: p.count }))
       setTopProducts(topProds)
-    } catch (err) {
+    } catch (err: any) {
       console.error('Dashboard error:', err)
     } finally {
       setLoading(false)

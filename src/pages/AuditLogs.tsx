@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api'
 import { cn, formatDateTime, exportToCsv } from '@/lib/utils'
 import { toast } from 'sonner'
 import Pagination from '@/components/Pagination'
@@ -21,11 +21,22 @@ export default function AuditLogs() {
   useEffect(() => { load() }, [])
 
   const load = async () => {
-    setLoading(true)
-    const { data, error } = await supabase.from('blast_audit_logs').select('*').order('created_at', { ascending: false }).limit(200)
-    if (error) toast.error(error.message)
-    else setLogs(data || [])
-    setLoading(false)
+    try {
+      setLoading(true)
+      const data = await apiFetch<any[]>('/api/query', {
+        method: 'POST',
+        body: JSON.stringify({
+          table: 'blast_audit_logs',
+          order: { column: 'created_at', ascending: false },
+          limit: 200
+        })
+      })
+      setLogs(data || [])
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to fetch logs')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const entities = ['all', ...new Set(logs.map(l => l.entity_type))]

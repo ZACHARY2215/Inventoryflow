@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase, invokeEdgeFunction } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
+import { apiFetch } from '@/lib/api'
 import { cn, formatCurrency, formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import {
@@ -30,15 +31,33 @@ export default function OrderDetail() {
   const fetchOrder = async () => {
     try {
       setLoading(true)
-      const [orderRes, itemsRes] = await Promise.all([
-        supabase.from('blast_orders').select('*').eq('id', id).single(),
-        supabase.from('blast_order_items').select('*, blast_products(name, sku)').eq('order_id', id),
+      const [orderData, itemsData] = await Promise.all([
+        apiFetch<any>('/api/query', {
+          method: 'POST',
+          body: JSON.stringify({
+            table: 'blast_orders',
+            eq: { id: id },
+            single: true
+          })
+        }),
+        apiFetch<any[]>('/api/query', {
+          method: 'POST',
+          body: JSON.stringify({
+            table: 'blast_order_items',
+            select: '*, blast_products(name, sku)',
+            eq: { order_id: id }
+          })
+        })
       ])
-      if (orderRes.error) { toast.error('Order not found'); navigate('/orders'); return }
-      setOrder(orderRes.data)
-      setItems(itemsRes.data || [])
-    } catch {
-      toast.error('Failed to load order details')
+      
+      setOrder(orderData)
+      setItems(itemsData || [])
+    } catch (err: any) {
+      if (err.status === 406 || err.message?.includes('JSON')) {
+        toast.error('Order not found'); navigate('/orders');
+      } else {
+        toast.error('Failed to load order details')
+      }
     } finally {
       setLoading(false)
     }

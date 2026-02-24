@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useAuth } from '@/context/AuthContext'
 import { cn, formatCurrency, piecesToCasesAndPieces, exportToCsv } from '@/lib/utils'
+import { apiFetch } from '@/lib/api'
 import { toast } from 'sonner'
 import Pagination from '@/components/Pagination'
 import PrintButton from '@/components/PrintButton'
@@ -68,16 +69,25 @@ export default function Products() {
   useEffect(() => { fetchProducts(); fetchSuppliers() }, [])
 
   const fetchProducts = async () => {
-    setLoading(true)
-    const { data, error } = await supabase.from('blast_products').select('*').order('name')
-    if (error) toast.error(error.message)
-    else setProducts(data || [])
-    setLoading(false)
+    try {
+      setLoading(true)
+      const data = await apiFetch<Product[]>('/api/products', { timeoutMs: 15000 })
+      setProducts(data || [])
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load products')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const fetchSuppliers = async () => {
-    const { data } = await supabase.from('blast_suppliers').select('id, name').eq('is_active', true).order('name')
-    setSuppliers(data || [])
+    try {
+      const data = await apiFetch<Supplier[]>('/api/query', {
+        method: 'POST',
+        body: JSON.stringify({ table: 'blast_suppliers', select: 'id, name', eq: { is_active: true }, order: { column: 'name', ascending: true } })
+      })
+      setSuppliers(data || [])
+    } catch (error) {}
   }
 
   const handleSort = (key: SortKey) => {

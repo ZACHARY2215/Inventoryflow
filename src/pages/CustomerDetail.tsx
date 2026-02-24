@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { supabase } from '@/lib/supabase'
 import { cn, formatCurrency, formatDateTime, exportToCsv } from '@/lib/utils'
+import { apiFetch } from '@/lib/api'
 import { toast } from 'sonner'
 import Pagination from '@/components/Pagination'
 import {
@@ -55,22 +55,32 @@ export default function CustomerDetail() {
 
   const load = async () => {
     setLoading(true)
-    const { data: custData, error: custErr } = await supabase
-      .from('blast_customers').select('*').eq('id', id).single()
-    if (custErr) { toast.error(custErr.message); setLoading(false); return }
-    setCustomer(custData)
+    try {
+      const custData = await apiFetch<Customer>('/api/query', {
+        method: 'POST',
+        body: JSON.stringify({ table: 'blast_customers', eq: { id }, single: true })
+      })
+      if (!custData) { toast.error('Customer not found'); setLoading(false); return }
+      setCustomer(custData)
 
-    const [ordersRes, paymentsRes] = await Promise.all([
-      supabase.from('blast_orders').select('*')
-        .eq('customer_id', id)
-        .order('created_at', { ascending: false }),
-      supabase.from('blast_customer_payments').select('*')
-        .eq('customer_id', id)
-        .order('created_at', { ascending: false }),
-    ])
-    setOrders(ordersRes.data || [])
-    setPayments(paymentsRes.data || [])
-    setLoading(false)
+      const [ordersData, paymentsData] = await Promise.all([
+        apiFetch<Order[]>('/api/query', {
+          method: 'POST',
+          body: JSON.stringify({ table: 'blast_orders', eq: { customer_id: id }, order: { column: 'created_at', ascending: false } })
+        }),
+        apiFetch<Payment[]>('/api/query', {
+          method: 'POST',
+          body: JSON.stringify({ table: 'blast_customer_payments', eq: { customer_id: id }, order: { column: 'created_at', ascending: false } })
+        })
+      ])
+      
+      setOrders(ordersData || [])
+      setPayments(paymentsData || [])
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to load customer details')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const pagedOrders = orders.slice((page - 1) * pageSize, page * pageSize)

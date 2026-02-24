@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase, invokeEdgeFunction } from '@/lib/supabase'
 import { cn, formatDateTime, exportToCsv } from '@/lib/utils'
+import { apiFetch } from '@/lib/api'
 import { toast } from 'sonner'
 import Pagination from '@/components/Pagination'
 import PrintButton from '@/components/PrintButton'
@@ -43,14 +44,24 @@ export default function UserManagement() {
 
   const load = async () => {
     setLoading(true)
-    const [usersRes, reqRes] = await Promise.all([
-      supabase.from('blast_users').select('*').order('created_at', { ascending: false }),
-      supabase.from('blast_registration_requests').select('*').eq('status', 'pending').order('created_at', { ascending: false }),
-    ])
-    if (usersRes.error) toast.error(usersRes.error.message)
-    else setUsers(usersRes.data || [])
-    setRequests(reqRes.data || [])
-    setLoading(false)
+    try {
+      const [usersData, reqData] = await Promise.all([
+        apiFetch<UserProfile[]>('/api/query', {
+          method: 'POST',
+          body: JSON.stringify({ table: 'blast_users', order: { column: 'created_at', ascending: false } })
+        }),
+        apiFetch<RegistrationRequest[]>('/api/query', {
+          method: 'POST',
+          body: JSON.stringify({ table: 'blast_registration_requests', eq: { status: 'pending' }, order: { column: 'created_at', ascending: false } })
+        })
+      ])
+      setUsers(usersData || [])
+      setRequests(reqData || [])
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to load user data')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filtered = users.filter(u =>

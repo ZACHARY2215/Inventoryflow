@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { cn, formatCurrency, exportToCsv } from '@/lib/utils'
+import { apiFetch } from '@/lib/api'
 import { toast } from 'sonner'
 import Pagination from '@/components/Pagination'
 import PrintButton from '@/components/PrintButton'
@@ -44,11 +45,15 @@ export default function Customers() {
   useEffect(() => { fetch() }, [])
 
   const fetch = async () => {
-    setLoading(true)
-    const { data, error } = await supabase.from('blast_customers').select('*').order('name')
-    if (error) { toast.error(error.message); setLoading(false); return }
-    setCustomers(data || [])
-    setLoading(false)
+    try {
+      setLoading(true)
+      const data = await apiFetch<Customer[]>('/api/customers', { timeoutMs: 15000 })
+      setCustomers(data || [])
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to load customers')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filtered = customers.filter(c => {

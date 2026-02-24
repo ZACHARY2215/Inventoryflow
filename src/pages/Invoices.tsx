@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { apiFetch } from '@/lib/api'
 import { formatDateTime } from '@/lib/utils'
 import { toast } from 'sonner'
 import { FileText, Search, Download } from 'lucide-react'
@@ -16,11 +16,21 @@ export default function Invoices() {
   useEffect(() => { load() }, [])
 
   const load = async () => {
-    setLoading(true)
-    const { data, error } = await supabase.from('blast_invoices').select('*').order('created_at', { ascending: false })
-    if (error) toast.error(error.message)
-    else setInvoices(data || [])
-    setLoading(false)
+    try {
+      setLoading(true)
+      const data = await apiFetch<Invoice[]>('/api/query', {
+        method: 'POST',
+        body: JSON.stringify({
+          table: 'blast_invoices',
+          order: { column: 'created_at', ascending: false }
+        })
+      })
+      setInvoices(data || [])
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to fetch invoices')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filtered = invoices.filter(i => i.invoice_number.toLowerCase().includes(search.toLowerCase()))
