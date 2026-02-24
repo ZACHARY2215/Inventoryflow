@@ -145,8 +145,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [session, signOut])
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
-      if (error) console.warn('Supabase session warning:', error.message)
+    const getSessionWithTimeout = () => {
+      const timeout = new Promise<{data: {session: any}, error: any}>((_, reject) => {
+        setTimeout(() => reject(new Error('Session fetch timed out (Token refresh deadlock)')), 6000)
+      })
+      return Promise.race([supabase.auth.getSession(), timeout])
+    }
+
+    getSessionWithTimeout().then(({ data: { session }, error }) => {
+      if (error) {
+        console.warn('Supabase session warning:', error.message)
+        throw error
+      }
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
@@ -154,10 +164,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       setIsLoading(false)
     }).catch((err) => {
-      console.error('Failed to get session (timeout or network error):', err)
+      console.error('Failed to get session:', err)
+      // Nuke stuck tokens to prevent permanent deadlock
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i)
+        if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+          localStorage.removeItem(key)
+        }
+      }
       setSession(null)
       setUser(null)
       setIsLoading(false)
+      toast.error('Session expired or connection dropped. Please log in again.')
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
