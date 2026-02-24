@@ -145,12 +145,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [session, signOut])
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) console.warn('Supabase session warning:', error.message)
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
         fetchProfile(session.user.id)
       }
+      setIsLoading(false)
+    }).catch((err) => {
+      console.error('Failed to get session (timeout or network error):', err)
+      setSession(null)
+      setUser(null)
       setIsLoading(false)
     })
 
