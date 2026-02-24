@@ -14,7 +14,10 @@ export default async function handler(req: any, res: any) {
     return res.status(500).json({ error: 'Missing Supabase credentials' });
   }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const authHeader = req.headers.authorization;
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    global: { headers: authHeader ? { Authorization: authHeader } : {} }
+  });
 
   try {
     if (req.method !== 'POST') {

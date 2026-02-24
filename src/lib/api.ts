@@ -3,6 +3,7 @@
  * Provides timeout control, JSON parsing, error normalization, and base URL resolution.
  */
 
+
 interface ApiFetchOptions extends RequestInit {
   timeoutMs?: number;
 }
@@ -29,12 +30,28 @@ export async function apiFetch<T>(endpoint: string, options: ApiFetchOptions = {
   const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
   const url = path.startsWith('/api') ? path : `/api${path}`;
 
+  // Get active session token synchronously to prevent Token Refresh Deadlocks from Supabase SDK
+  let token = null;
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+        const sessionData = JSON.parse(localStorage.getItem(key) || '{}');
+        token = sessionData?.access_token || null;
+        break;
+      }
+    }
+  } catch (e) {
+    console.error('Failed to read auth token from local storage', e);
+  }
+
   try {
     const response = await fetch(url, {
       ...fetchOptions,
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
         ...fetchOptions.headers,
       },
       signal: controller.signal,
