@@ -57,14 +57,19 @@ export default function Orders() {
   }
 
   const fetchOrders = async () => {
-    setLoading(true)
-    const { data, error } = await supabase
-      .from('blast_orders')
-      .select('*')
-      .order('created_at', { ascending: false })
-    if (error) toast.error(error.message)
-    else setOrders(data || [])
-    setLoading(false)
+    try {
+      setLoading(true)
+      const { data, error } = await supabase
+        .from('blast_orders')
+        .select('*')
+        .order('created_at', { ascending: false })
+      if (error) toast.error(error.message)
+      else setOrders(data || [])
+    } catch {
+      toast.error('Failed to load orders')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleSort = (key: SortKey) => {

@@ -28,30 +28,46 @@ export default function OrderDetail() {
   useEffect(() => { if (id) fetchOrder() }, [id])
 
   const fetchOrder = async () => {
-    setLoading(true)
-    const [orderRes, itemsRes] = await Promise.all([
-      supabase.from('blast_orders').select('*').eq('id', id).single(),
-      supabase.from('blast_order_items').select('*, blast_products(name, sku)').eq('order_id', id),
-    ])
-    if (orderRes.error) { toast.error('Order not found'); navigate('/orders'); return }
-    setOrder(orderRes.data)
-    setItems(itemsRes.data || [])
-    setLoading(false)
+    try {
+      setLoading(true)
+      const [orderRes, itemsRes] = await Promise.all([
+        supabase.from('blast_orders').select('*').eq('id', id).single(),
+        supabase.from('blast_order_items').select('*, blast_products(name, sku)').eq('order_id', id),
+      ])
+      if (orderRes.error) { toast.error('Order not found'); navigate('/orders'); return }
+      setOrder(orderRes.data)
+      setItems(itemsRes.data || [])
+    } catch {
+      toast.error('Failed to load order details')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const doAction = async (type: 'confirm' | 'deliver' | 'cancel') => {
     setActionLoading(true)
-    const fnMap = { confirm: 'inv_confirm_order', deliver: 'inv_deliver_order', cancel: 'inv_cancel_order' }
     const msgMap = { confirm: 'Order confirmed!', deliver: 'Order marked as delivered!', cancel: 'Order cancelled' }
     try {
-      const { data, error } = await supabase.functions.invoke(fnMap[type], {
-        body: { order_id: id },
-      })
-      if (error || !data?.success) throw new Error(data?.error || error?.message || 'Failed')
-      if (type === 'cancel' && data.stock_restored) toast.success('Order cancelled — stock restored')
-      else toast.success(msgMap[type])
+      if (type === 'deliver') {
+        const { error } = await supabase.from('blast_orders').update({
+          status: 'delivered',
+          delivered_at: new Date().toISOString()
+        }).eq('id', id)
+        if (error) throw error
+      } else {
+        const fnMap = { confirm: 'inv_confirm_order', cancel: 'inv_cancel_order' }
+        const { data, error } = await supabase.functions.invoke(fnMap[type], {
+          body: { order_id: id },
+        })
+        if (error || !data?.success) throw new Error(data?.error || error?.message || 'Failed')
+        if (type === 'cancel' && data.stock_restored) toast.success('Order cancelled — stock restored')
+      }
+      
+      if (type !== 'cancel' || !msgMap['cancel'].includes('restored')) {
+        toast.success(msgMap[type])
+      }
       setDialog(null)
-      fetchOrder()
+      await fetchOrder()
     } catch (err: any) { toast.error(err.message) }
     finally { setActionLoading(false) }
   }
