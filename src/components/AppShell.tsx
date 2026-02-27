@@ -196,7 +196,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 <p className="text-sm font-medium text-text-primary truncate">
                   {(profile as any)?.display_name || profile?.email || user?.email || 'User'}
                 </p>
-                <p className="text-xs text-text-tertiary capitalize">{profile?.role || 'staff'}</p>
+                <p className="text-xs text-text-tertiary capitalize">{profile?.role || 'unknown'}</p>
               </div>
             </div>
           )}

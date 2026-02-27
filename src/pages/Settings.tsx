@@ -65,7 +65,7 @@ export default function Settings() {
           <div>
             <label className="block text-xs font-medium text-text-secondary mb-1">Role</label>
             <p className="text-sm font-medium capitalize flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-cta" /> {profile?.role || 'staff'}
+              <Shield className="w-3.5 h-3.5 text-cta" /> {profile?.role || 'unknown'}
             </p>
           </div>
           <div>

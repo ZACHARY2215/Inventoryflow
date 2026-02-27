@@ -63,6 +63,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch {
       // Profile fetch failed
     }
+    // Single retry for transient network/RLS timing issues right after sign-in.
+    try {
+      await new Promise(resolve => setTimeout(resolve, 400))
+      const { data, error } = await supabase
+        .from('blast_users')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (!error && data) {
+        if (data.is_active === false) {
+          await supabase.auth.signOut()
+          setProfile(null)
+          return null
+        }
+        setProfile(data as UserProfile)
+        localStorage.removeItem('pendingApproval')
+        return data as UserProfile
+      }
+    } catch {
+      // Profile fetch retry failed
+    }
     return null
   }
 
@@ -145,37 +166,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [session, signOut])
 
   useEffect(() => {
-    const getSessionWithTimeout = () => {
-      const timeout = new Promise<{data: {session: any}, error: any}>((_, reject) => {
-        setTimeout(() => reject(new Error('Session fetch timed out (Token refresh deadlock)')), 6000)
+    const getSessionSafely = async () => {
+      // Create a timeout promise that resolves with a manually parsed local session
+      const timeoutPromise = new Promise<{data: {session: any}, error: any}>((resolve) => {
+        setTimeout(() => {
+          console.warn('Supabase getSession timed out or deadlocked. Using local storage fallback.')
+          let fallbackSession = null
+          try {
+            for (let i = 0; i < localStorage.length; i++) {
+              const key = localStorage.key(i)
+              if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
+                fallbackSession = JSON.parse(localStorage.getItem(key) || '{}')
+                break
+              }
+            }
+          } catch (e) {
+            console.error('Failed to parse fallback session', e)
+          }
+          resolve({ data: { session: fallbackSession }, error: null })
+        }, 5000) // 5 second allowance
       })
-      return Promise.race([supabase.auth.getSession(), timeout])
+
+      // Race the actual getSession against our fallback
+      return Promise.race([
+        supabase.auth.getSession().catch(err => ({ data: { session: null }, error: err })),
+        timeoutPromise
+      ])
     }
 
-    getSessionWithTimeout().then(({ data: { session }, error }) => {
+    getSessionSafely().then(async ({ data: { session }, error }) => {
       if (error) {
         console.warn('Supabase session warning:', error.message)
-        throw error
       }
       setSession(session)
       setUser(session?.user ?? null)
       if (session?.user) {
-        fetchProfile(session.user.id)
+        await fetchProfile(session.user.id)
       }
       setIsLoading(false)
     }).catch((err) => {
-      console.error('Failed to get session:', err)
-      // Nuke stuck tokens to prevent permanent deadlock
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i)
-        if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
-          localStorage.removeItem(key)
-        }
-      }
-      setSession(null)
-      setUser(null)
+      console.error('Critical failure in session initialization:', err)
       setIsLoading(false)
-      toast.error('Session expired or connection dropped. Please log in again.')
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -200,7 +231,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               }
             }
           } else {
-            fetchProfile(session.user.id)
+            await fetchProfile(session.user.id)
           }
         } else {
           setProfile(null)
