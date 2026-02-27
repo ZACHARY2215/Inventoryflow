@@ -41,14 +41,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const authInitializedRef = useRef(false)
+  const profileFetchPromiseRef = useRef<Promise<UserProfile | null> | null>(null)
+  const profileFetchUserIdRef = useRef<string | null>(null)
+
+  const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
+    const timeoutPromise = new Promise<T>((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(`${label} timed out after ${timeoutMs}ms`)), timeoutMs)
+    })
+    try {
+      return await Promise.race([promise, timeoutPromise])
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
+  }
 
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
+    if (profileFetchPromiseRef.current && profileFetchUserIdRef.current === userId) {
+      return profileFetchPromiseRef.current
+    }
+
+    const run = async (): Promise<UserProfile | null> => {
     try {
-      const { data, error } = await supabase
-        .from('blast_users')
-        .select('*')
-        .eq('id', userId)
-        .single()
+      const { data, error } = await withTimeout(
+        supabase
+          .from('blast_users')
+          .select('*')
+          .eq('id', userId)
+          .single(),
+        7000,
+        'fetchProfile query'
+      )
       if (!error && data) {
         if (data.is_active === false) {
           await supabase.auth.signOut()
@@ -60,17 +84,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem('pendingApproval')
         return data as UserProfile
       }
-    } catch {
+    } catch (err: any) {
+      const message = err?.message || String(err)
+      // If the initial query timed out, don't block auth with another long retry.
+      if (message.includes('timed out')) return null
       // Profile fetch failed
     }
     // Single retry for transient network/RLS timing issues right after sign-in.
     try {
       await new Promise(resolve => setTimeout(resolve, 400))
-      const { data, error } = await supabase
-        .from('blast_users')
-        .select('*')
-        .eq('id', userId)
-        .single()
+      const { data, error } = await withTimeout(
+        supabase
+          .from('blast_users')
+          .select('*')
+          .eq('id', userId)
+          .single(),
+        7000,
+        'fetchProfile retry query'
+      )
       if (!error && data) {
         if (data.is_active === false) {
           await supabase.auth.signOut()
@@ -82,9 +113,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return data as UserProfile
       }
     } catch {
-      // Profile fetch retry failed
     }
     return null
+    }
+
+    const promise = run().finally(() => {
+      if (profileFetchPromiseRef.current === promise) {
+        profileFetchPromiseRef.current = null
+        profileFetchUserIdRef.current = null
+      }
+    })
+
+    profileFetchPromiseRef.current = promise
+    profileFetchUserIdRef.current = userId
+    return promise
   }
 
   // Handle Google OAuth users who haven't been approved yet
@@ -166,81 +208,90 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [session, signOut])
 
   useEffect(() => {
-    const getSessionSafely = async () => {
-      // Create a timeout promise that resolves with a manually parsed local session
-      const timeoutPromise = new Promise<{data: {session: any}, error: any}>((resolve) => {
-        setTimeout(() => {
-          console.warn('Supabase getSession timed out or deadlocked. Using local storage fallback.')
-          let fallbackSession = null
-          try {
-            for (let i = 0; i < localStorage.length; i++) {
-              const key = localStorage.key(i)
-              if (key && key.startsWith('sb-') && key.endsWith('-auth-token')) {
-                fallbackSession = JSON.parse(localStorage.getItem(key) || '{}')
-                break
-              }
-            }
-          } catch (e) {
-            console.error('Failed to parse fallback session', e)
-          }
-          resolve({ data: { session: fallbackSession }, error: null })
-        }, 5000) // 5 second allowance
-      })
-
-      // Race the actual getSession against our fallback
-      return Promise.race([
-        supabase.auth.getSession().catch(err => ({ data: { session: null }, error: err })),
-        timeoutPromise
-      ])
+    let disposed = false
+    const readSessionFromStorage = (): Session | null => {
+      try {
+        const url = new URL(import.meta.env.VITE_SUPABASE_URL as string)
+        const projectRef = url.hostname.split('.')[0]
+        const key = `sb-${projectRef}-auth-token`
+        const raw = localStorage.getItem(key)
+        if (!raw) return null
+        const parsed = JSON.parse(raw)
+        const session = parsed?.currentSession ?? parsed
+        if (session?.access_token && session?.user?.id) {
+          return session as Session
+        }
+      } catch {
+        // ignore local fallback parse errors
+      }
+      return null
     }
 
-    getSessionSafely().then(async ({ data: { session }, error }) => {
-      if (error) {
-        console.warn('Supabase session warning:', error.message)
+    const applySession = async (event: string, nextSession: Session | null) => {
+      authInitializedRef.current = true
+      setSession(nextSession)
+      setUser(nextSession?.user ?? null)
+
+      if (nextSession?.user) {
+        const provider = nextSession.user.app_metadata?.provider
+        if (event === 'SIGNED_IN') {
+          // Non-blocking bookkeeping.
+          void recordLogin(nextSession.user.id)
+
+          // Only block on Google because we need pending-approval gating behavior.
+          if (provider === 'google') {
+            const foundProfile = await fetchProfile(nextSession.user.id)
+          // If user has no profile and signed in with OAuth (Google) → pending flow
+            if (!foundProfile) {
+              await handleGooglePendingUser(nextSession.user)
+              await supabase.auth.signOut()
+              toast.info('Your account is pending admin approval. You\'ll be notified once approved.')
+              return
+            }
+          }
+        }
+        // For refresh/email sign-in flows, don't block route loading on profile query.
+        if (!disposed) setIsLoading(false)
+        void fetchProfile(nextSession.user.id)
+      } else {
+        setProfile(null)
+        if (!disposed) setIsLoading(false)
       }
-      setSession(session)
-      setUser(session?.user ?? null)
-      if (session?.user) {
-        await fetchProfile(session.user.id)
-      }
-      setIsLoading(false)
-    }).catch((err) => {
-      console.error('Critical failure in session initialization:', err)
-      setIsLoading(false)
-    })
+    }
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        setSession(session)
-        setUser(session?.user ?? null)
-
-        if (session?.user) {
-          if (event === 'SIGNED_IN') {
-            recordLogin(session.user.id)
-
-            const foundProfile = await fetchProfile(session.user.id)
-
-            // If user has no profile and signed in with OAuth (Google) → pending flow
-            if (!foundProfile) {
-              const provider = session.user.app_metadata?.provider
-              if (provider === 'google') {
-                await handleGooglePendingUser(session.user)
-                await supabase.auth.signOut()
-                toast.info('Your account is pending admin approval. You\'ll be notified once approved.')
-                return
-              }
-            }
-          } else {
-            await fetchProfile(session.user.id)
-          }
-        } else {
-          setProfile(null)
-        }
-        setIsLoading(false)
+        if (disposed) return
+        await applySession(event, session)
       }
     )
 
+    // Fallback bootstrap: if INITIAL_SESSION callback is delayed, fetch once directly.
+    supabase.auth.getSession()
+      .then(async ({ data: { session } }) => {
+        if (disposed || authInitializedRef.current) return
+        await applySession('INITIAL_SESSION', session)
+      })
+      .catch(() => {
+        if (disposed || authInitializedRef.current) return
+        setIsLoading(false)
+      })
+
+    // Absolute failsafe to avoid an infinite spinner if browser extensions block auth plumbing.
+    const loadingFailsafe = setTimeout(() => {
+      if (!disposed && !authInitializedRef.current) {
+        const fallback = readSessionFromStorage()
+        if (fallback?.user) {
+          applySession('INITIAL_SESSION', fallback)
+          return
+        }
+        setIsLoading(false)
+      }
+    }, 8000)
+
     return () => {
+      disposed = true
+      clearTimeout(loadingFailsafe)
       subscription.unsubscribe()
     }
   }, [])
